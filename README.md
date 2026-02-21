@@ -35,17 +35,46 @@ video-downloader-web/
 
 ## Quick Start
 
-### Backend
+### Option 1: Docker Compose (Recommended)
+
+The easiest way to run the entire application:
+
+```bash
+# Build and start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+```
+
+Access the application:
+- Frontend: http://localhost
+- Backend API: http://localhost:8000
+- API Documentation: http://localhost:8000/docs
+
+Downloaded videos will be saved to `./downloads/` directory.
+
+### Option 2: Manual Setup
+
+#### Backend
 
 ```bash
 cd backend
 pip install -r requirements.txt
-python main.py
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 Backend will run on http://localhost:8000
 
-### Frontend
+Or use production mode (without reload):
+```bash
+uvicorn main:app --host 0.0.0.0 --port 8000
+```
+
+#### Frontend
 
 ```bash
 cd frontend
