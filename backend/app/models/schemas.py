@@ -64,3 +64,5 @@ class SettingsResponse(BaseModel):
     download_path: str
     proxy_url: str
     proxy_domains: List[str]
+    default_proxy_url: str = ""
+    default_proxy_domains: List[str] = []
