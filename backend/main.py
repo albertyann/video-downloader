@@ -7,10 +7,8 @@ from app.api.routes import router
 
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler()
-    ]
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler()],
 )
 logger = logging.getLogger(__name__)
 
@@ -19,12 +17,12 @@ settings = get_settings()
 app = FastAPI(
     title=settings.APP_NAME,
     description="Video downloader with domain-specific proxy support",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=settings.get_cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -44,20 +42,10 @@ async def startup_event():
     logger.info("Video Downloader API Starting...")
     logger.info(f"Download path: {settings.DOWNLOAD_PATH}")
     logger.info(f"Proxy URL: {settings.PROXY_URL}")
-    logger.info(f"Proxy domains: {settings.PROXY_DOMAINS}")
+    logger.info(f"Proxy domains: {settings.get_proxy_domains()}")
     logger.info(f"API docs: http://{settings.HOST}:{settings.PORT}/docs")
     logger.info("=" * 60)
 
 
-if __name__ == "__main__":
-    import uvicorn
-    
-    logger.info(f"Starting server on {settings.HOST}:{settings.PORT}")
-    
-    uvicorn.run(
-        "main:app",
-        host=settings.HOST,
-        port=settings.PORT,
-        reload=settings.DEBUG,
-        log_level="info"
-    )
+# Uvicorn 启动命令:
+# cd backend && uvicorn main:app --host 0.0.0.0 --port 8000 --reload
