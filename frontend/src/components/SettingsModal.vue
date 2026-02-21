@@ -37,9 +37,12 @@
           <input
             v-model="localSettings.proxy_url"
             type="text"
-            placeholder="http://proxy:port or socks5://proxy:port"
+            :placeholder="localSettings.default_proxy_url || 'http://proxy:port or socks5://proxy:port'"
             class="w-full bg-darker border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-primary"
           />
+          <p v-if="localSettings.default_proxy_url" class="text-xs text-gray-500 mt-1">
+            Default: {{ localSettings.default_proxy_url }}
+          </p>
         </div>
         
         <!-- Proxy Domains -->
@@ -52,7 +55,12 @@
             rows="4"
             class="w-full bg-darker border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-primary resize-none"
           ></textarea>
-          <p class="text-xs text-gray-500 mt-1">These domains will use the proxy</p>
+          <p class="text-xs text-gray-500 mt-1">
+            These domains will use the proxy
+            <span v-if="localSettings.default_proxy_domains?.length">
+              (Default: {{ localSettings.default_proxy_domains.join(', ') }})
+            </span>
+          </p>
         </div>
       </div>
       
@@ -89,7 +97,9 @@ const emit = defineEmits(['close', 'save'])
 const localSettings = ref({
   download_path: '',
   proxy_url: '',
-  proxy_domains: []
+  proxy_domains: [],
+  default_proxy_url: '',
+  default_proxy_domains: []
 })
 
 const proxyDomainsText = ref('')
