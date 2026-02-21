@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API_BASE_URL = 'http://localhost:8000/api'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -61,5 +61,6 @@ export const settingsApi = {
 }
 
 export function createWebSocket(downloadId) {
-  return new WebSocket(`ws://localhost:8000/api/ws/download/${downloadId}`)
+  const wsBaseUrl = import.meta.env.VITE_WS_BASE_URL || 'ws://localhost:8000/api'
+  return new WebSocket(`${wsBaseUrl}/ws/download/${downloadId}`)
 }
