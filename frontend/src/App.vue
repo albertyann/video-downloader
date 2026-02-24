@@ -68,13 +68,16 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import VideoInput from './components/VideoInput.vue'
 import VideoInfo from './components/VideoInfo.vue'
 import DownloadProgress from './components/DownloadProgress.vue'
 import HistoryList from './components/HistoryList.vue'
 import SettingsModal from './components/SettingsModal.vue'
-import { videoApi, downloadApi, settingsApi, createWebSocket } from './utils/api'
+import { videoApi, downloadApi, settingsApi } from './utils/api'
+
+const POLLING_INTERVAL = 1000
+const DOWNLOAD_TIMEOUT = 600000
 
 const isFetching = ref(false)
 const isDownloading = ref(false)
@@ -99,9 +102,59 @@ const settings = ref({
 })
 const showSettings = ref(false)
 
+let pollInterval = null
+let timeoutId = null
+
+const clearTimers = () => {
+  if (pollInterval) {
+    clearInterval(pollInterval)
+    pollInterval = null
+  }
+  if (timeoutId) {
+    clearTimeout(timeoutId)
+    timeoutId = null
+  }
+}
+
+const startDownloadPolling = async (downloadId, onComplete, onError) => {
+  clearTimers()
+  
+  pollInterval = setInterval(async () => {
+    try {
+      const records = await downloadApi.getDownloads(1)
+      if (records.length > 0 && records[0].id === downloadId) {
+        const record = records[0]
+        
+        if (record.status === 'completed') {
+          clearTimers()
+          onComplete?.()
+        } else if (record.status === 'failed') {
+          clearTimers()
+          onError?.(record.error_msg || 'Download failed')
+        }
+      }
+    } catch (e) {
+      console.error('Poll error:', e)
+    }
+  }, POLLING_INTERVAL)
+  
+  timeoutId = setTimeout(() => {
+    clearTimers()
+    if (isDownloading.value) {
+      isDownloading.value = false
+      downloadError.value = 'Download timeout'
+      statusText.value = 'Download timeout'
+    }
+  }, DOWNLOAD_TIMEOUT)
+}
+
 onMounted(() => {
   loadDownloads()
   loadSettings()
+})
+
+onUnmounted(() => {
+  clearTimers()
 })
 
 const loadDownloads = async () => {
@@ -174,45 +227,25 @@ const handleDownload = async () => {
     
     statusText.value = 'Downloading...'
     
-    // Poll for progress instead of WebSocket for simplicity
-    const pollInterval = setInterval(async () => {
-      try {
-        const records = await downloadApi.getDownloads(1)
-        if (records.length > 0 && records[0].id === downloadId) {
-          const record = records[0]
-          
-          if (record.status === 'completed') {
-            isComplete.value = true
-            isDownloading.value = false
-            currentStatus.value = 'completed'
-            statusText.value = 'Download complete!'
-            downloadProgress.value = 1
-            clearInterval(pollInterval)
-            loadDownloads()
-          } else if (record.status === 'failed') {
-            isComplete.value = true
-            isDownloading.value = false
-            currentStatus.value = 'failed'
-            downloadError.value = record.error_msg || 'Download failed'
-            statusText.value = 'Download failed'
-            clearInterval(pollInterval)
-            loadDownloads()
-          }
-        }
-      } catch (e) {
-        console.error('Poll error:', e)
-      }
-    }, 1000)
-    
-    // Stop polling after 10 minutes
-    setTimeout(() => {
-      clearInterval(pollInterval)
-      if (isDownloading.value) {
+    startDownloadPolling(
+      downloadId,
+      () => {
+        isComplete.value = true
         isDownloading.value = false
-        statusText.value = 'Download timeout'
+        currentStatus.value = 'completed'
+        statusText.value = 'Download complete!'
+        downloadProgress.value = 1
+        loadDownloads()
+      },
+      (errorMsg) => {
+        isComplete.value = true
+        isDownloading.value = false
+        currentStatus.value = 'failed'
+        downloadError.value = errorMsg
+        statusText.value = 'Download failed'
+        loadDownloads()
       }
-    }, 600000)
-    
+    )
   } catch (error) {
     isDownloading.value = false
     currentStatus.value = 'failed'
@@ -238,44 +271,25 @@ const handleRetry = async () => {
     
     statusText.value = 'Downloading...'
     
-    // Poll for progress
-    const pollInterval = setInterval(async () => {
-      try {
-        const records = await downloadApi.getDownloads(1)
-        if (records.length > 0 && records[0].id === downloadId) {
-          const record = records[0]
-          
-          if (record.status === 'completed') {
-            isComplete.value = true
-            isDownloading.value = false
-            currentStatus.value = 'completed'
-            statusText.value = 'Download complete!'
-            downloadProgress.value = 1
-            clearInterval(pollInterval)
-            loadDownloads()
-          } else if (record.status === 'failed') {
-            isComplete.value = true
-            isDownloading.value = false
-            currentStatus.value = 'failed'
-            downloadError.value = record.error_msg || 'Download failed'
-            statusText.value = 'Download failed'
-            clearInterval(pollInterval)
-            loadDownloads()
-          }
-        }
-      } catch (e) {
-        console.error('Poll error:', e)
-      }
-    }, 1000)
-    
-    setTimeout(() => {
-      clearInterval(pollInterval)
-      if (isDownloading.value) {
+    startDownloadPolling(
+      downloadId,
+      () => {
+        isComplete.value = true
         isDownloading.value = false
-        statusText.value = 'Download timeout'
+        currentStatus.value = 'completed'
+        statusText.value = 'Download complete!'
+        downloadProgress.value = 1
+        loadDownloads()
+      },
+      (errorMsg) => {
+        isComplete.value = true
+        isDownloading.value = false
+        currentStatus.value = 'failed'
+        downloadError.value = errorMsg
+        statusText.value = 'Download failed'
+        loadDownloads()
       }
-    }, 600000)
-    
+    )
   } catch (error) {
     isDownloading.value = false
     currentStatus.value = 'failed'
@@ -299,7 +313,6 @@ const handleDownloadFromHistory = async (item) => {
   currentRecordId.value = item.id
   currentStatus.value = item.status
   
-  // Load video info from stored data
   if (item.video_info) {
     videoInfo.value = {
       title: item.video_info.title || item.title,
@@ -311,7 +324,6 @@ const handleDownloadFromHistory = async (item) => {
     }
   }
   
-  // Trigger download
   handleDownload()
 }
 

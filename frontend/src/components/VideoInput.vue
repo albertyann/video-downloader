@@ -20,6 +20,7 @@
         <span>{{ loading ? 'Loading...' : 'Fetch Info' }}</span>
       </button>
     </div>
+    <p v-if="errorMessage" class="text-red-400 text-sm mt-2">{{ errorMessage }}</p>
   </div>
 </template>
 
@@ -33,10 +34,60 @@ const props = defineProps({
 const emit = defineEmits(['fetch'])
 
 const url = ref('')
+const errorMessage = ref('')
+
+const SUPPORTED_DOMAINS = [
+  'youtube.com',
+  'youtu.be',
+  'bilibili.com',
+  'b23.tv',
+  'vimeo.com',
+  'dailymotion.com',
+  'tiktok.com'
+]
+
+const validateUrl = (urlString) => {
+  errorMessage.value = ''
+  
+  if (!urlString || !urlString.trim()) {
+    errorMessage.value = '请输入视频 URL'
+    return false
+  }
+  
+  let trimmedUrl = urlString.trim()
+  
+  try {
+    const urlObj = new URL(trimmedUrl)
+    
+    if (!['http:', 'https:'].includes(urlObj.protocol)) {
+      errorMessage.value = 'URL 必须使用 http 或 https 协议'
+      return false
+    }
+    
+    if (!urlObj.hostname) {
+      errorMessage.value = '无效的 URL 格式'
+      return false
+    }
+    
+    const hostname = urlObj.hostname.toLowerCase().replace('www.', '')
+    const isSupported = SUPPORTED_DOMAINS.some(domain => hostname.includes(domain))
+    
+    if (!isSupported) {
+      console.warn('未验证的域名:', hostname)
+    }
+    
+    return true
+  } catch (e) {
+    errorMessage.value = '请输入有效的 URL'
+    return false
+  }
+}
 
 const handleFetch = () => {
-  if (url.value.trim()) {
-    emit('fetch', url.value.trim())
+  if (!validateUrl(url.value)) {
+    return
   }
+  
+  emit('fetch', url.value.trim())
 }
 </script>
