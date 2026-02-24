@@ -10,7 +10,7 @@
     <div class="relative bg-dark rounded-xl border border-gray-700/50 w-full max-w-lg shadow-2xl">
       <!-- Header -->
       <div class="p-6 border-b border-gray-700/50">
-        <h2 class="text-xl font-bold text-white">⚙️ Settings</h2>
+        <h2 class="text-xl font-bold text-white">Settings</h2>
       </div>
       
       <!-- Content -->

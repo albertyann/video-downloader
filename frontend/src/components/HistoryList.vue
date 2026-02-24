@@ -2,7 +2,7 @@
   <div class="bg-dark/50 backdrop-blur-sm rounded-xl border border-gray-700/50 overflow-hidden">
     <!-- Header -->
     <div class="p-4 border-b border-gray-700/50 flex items-center justify-between">
-      <h3 class="text-lg font-bold text-white">📜 Download History</h3>
+      <h3 class="text-lg font-bold text-white">Download History</h3>
       
       <div class="flex gap-2">
         <input

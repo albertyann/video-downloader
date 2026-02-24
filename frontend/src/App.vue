@@ -3,7 +3,7 @@
     <div class="max-w-4xl mx-auto space-y-6">
       <!-- Header -->
       <header class="text-center mb-8">
-        <h1 class="text-4xl font-bold text-white mb-2">📹 Video Downloader</h1>
+        <h1 class="text-4xl font-bold text-white mb-2">Video Downloader</h1>
         <p class="text-gray-400">Download videos from 1000+ sites with domain-specific proxy support</p>
       </header>
       
@@ -50,10 +50,8 @@
       <div class="fixed bottom-6 right-6">
         <button
           @click="showSettings = true"
-          class="bg-secondary hover:bg-gray-600 text-white p-4 rounded-full shadow-lg transition-colors"
-        >
-          ⚙️
-        </button>
+          class="bg-secondary hover:bg-gray-600 text-white p-2 rounded-full shadow-lg transition-colors"
+        >⚙️</button>
       </div>
       
       <!-- Settings Modal -->
